@@ -62,15 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* -------------------------------------------------------------
-   1. KONEKSI FIREBASE (SDK REALTIME + INSTANT REST DUAL-ENGINE)
+   1. KONEKSI FIREBASE (REALTIME STREAMING: SSE + SDK + ACTIVE HEARTBEAT)
    ------------------------------------------------------------- */
 function initFirebaseConnection() {
   updateDbStatusUI('Menghubungkan ke Firebase...', 'warning');
 
-  // Tarik data seketika pertama kali via REST (< 200ms)
+  // 1. Tarik data instan pertama kali via REST (< 200ms)
   fetchQuickInitialData();
 
-  // Aktifkan Firebase SDK jika tersedia di window
+  // 2. Aktifkan Native Server-Sent Events (SSE) Streaming
+  // Membuka koneksi streaming permanen ke Firebase: setiap kali data di Firebase berubah,
+  // Firebase langsung mengirimkan event secara instan (< 50ms) tanpa refresh browser!
+  initFirebaseSSE();
+
+  // 3. Aktifkan Firebase SDK jika tersedia di window
   if (typeof firebase !== 'undefined' && firebase.initializeApp) {
     try {
       if (!firebase.apps || !firebase.apps.length) {
@@ -81,24 +86,94 @@ function initFirebaseConnection() {
       const iotRef = fbDatabase.ref(NODE_PATH);
       iotRef.on('value', (snapshot) => {
         appState.firebaseConnected = true;
-        updateDbStatusUI('● Terhubung (Firebase Live)', 'connected');
-
+        updateDbStatusUI('● Terhubung (Realtime Live)', 'connected');
         const data = snapshot.val();
         if (data) {
           handleIncomingFirebaseData(data);
         }
       }, (err) => {
-        console.warn('Firebase SDK on error, gunakan polling REST:', err);
-        startRestPollingInterval();
+        console.warn('Firebase SDK error:', err);
       });
-      return;
+
+      // Dengarkan juga node relays secara spesifik
+      fbDatabase.ref(`${NODE_PATH}/relays`).on('value', (snapshot) => {
+        const relays = snapshot.val();
+        if (relays) {
+          handleIncomingFirebaseData({ relays: relays });
+        }
+      });
     } catch (e) {
       console.warn('Error inisialisasi Firebase SDK:', e);
     }
   }
 
-  // Backup jika SDK diblokir jaringan
-  startRestPollingInterval();
+  // 4. Active Heartbeat Polling (berjalan terus setiap 1200ms sebagai proteksi berlapis)
+  startContinuousPolling();
+}
+
+function initFirebaseSSE() {
+  try {
+    const sseUrl = `${DB_BASE_URL}/${NODE_PATH}.json`;
+    const sse = new EventSource(sseUrl);
+
+    sse.addEventListener('put', (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        appState.firebaseConnected = true;
+        updateDbStatusUI('● Terhubung (Realtime Live)', 'connected');
+        handleSseUpdate(payload.path, payload.data);
+      } catch (err) {
+        console.error('SSE put error:', err);
+      }
+    });
+
+    sse.addEventListener('patch', (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        appState.firebaseConnected = true;
+        updateDbStatusUI('● Terhubung (Realtime Live)', 'connected');
+        handleSseUpdate(payload.path, payload.data);
+      } catch (err) {
+        console.error('SSE patch error:', err);
+      }
+    });
+
+    sse.onopen = () => {
+      appState.firebaseConnected = true;
+      updateDbStatusUI('● Terhubung (Realtime Live)', 'connected');
+      console.log('Firebase SSE Realtime Stream aktif!');
+    };
+
+    sse.onerror = (err) => {
+      console.warn('SSE reconnecting / status fallback...');
+    };
+  } catch (e) {
+    console.warn('EventSource tidak tersedia di browser ini:', e);
+  }
+}
+
+function handleSseUpdate(path, data) {
+  if (!path || path === '/') {
+    if (data && typeof data === 'object') {
+      handleIncomingFirebaseData(data);
+    }
+    return;
+  }
+
+  const cleanPath = path.replace(/^\//, '');
+  if (cleanPath === 'ph') {
+    handleIncomingFirebaseData({ ph: data });
+  } else if (cleanPath === 'tds') {
+    handleIncomingFirebaseData({ tds: data });
+  } else if (cleanPath === 'relays') {
+    handleIncomingFirebaseData({ relays: data });
+  } else if (cleanPath.startsWith('relays/')) {
+    const relayId = cleanPath.split('/')[1];
+    if (relayId) {
+      syncRelayUI(relayId, Boolean(data));
+      logActivity(`Firebase Realtime: ${relayId} berubah -> ${data ? 'AKTIF' : 'MATI'}`, 'highlight');
+    }
+  }
 }
 
 function fetchQuickInitialData() {
@@ -107,18 +182,19 @@ function fetchQuickInitialData() {
     .then(data => {
       if (data) {
         appState.firebaseConnected = true;
-        updateDbStatusUI('● Terhubung (Firebase Live)', 'connected');
+        updateDbStatusUI('● Terhubung (Realtime Live)', 'connected');
         handleIncomingFirebaseData(data);
       }
     })
     .catch(err => {
-      console.warn('Fetch awal REST:', err);
+      console.warn('Fetch polling error:', err);
     });
 }
 
-function startRestPollingInterval() {
+function startContinuousPolling() {
   if (restPollTimer) return;
-  restPollTimer = setInterval(fetchQuickInitialData, 2000);
+  // Polling aktif setiap 1.2 detik untuk memastikan sinkronisasi 100% tanpa jeda
+  restPollTimer = setInterval(fetchQuickInitialData, 1200);
 }
 
 function handleIncomingFirebaseData(data) {
