@@ -44,8 +44,8 @@ class HydroponicScene {
 
     // 1. SCENE
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a1017);
-    this.scene.fog = new THREE.FogExp2(0x0a1017, 0.022);
+    this.scene.background = new THREE.Color(0xf1f5f9);
+    this.scene.fog = new THREE.FogExp2(0xf1f5f9, 0.015);
 
     // 2. CAMERA
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
@@ -65,7 +65,7 @@ class HydroponicScene {
     this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below floor
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
     this.controls.minDistance = 3;
     this.controls.maxDistance = 25;
     this.controls.target.set(0, 1.8, 0);
@@ -89,12 +89,12 @@ class HydroponicScene {
   }
 
   setupLighting() {
-    // Ambient Light
-    this.ambientLight = new THREE.AmbientLight(0x1a2936, 1.2);
+    // Ambient Light (Crisp White Daylight)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     this.scene.add(this.ambientLight);
 
-    // Main Directional Sun / Studio Key Light
-    this.mainLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    // Main Studio Sun Key Light
+    this.mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
     this.mainLight.position.set(8, 14, 8);
     this.mainLight.castShadow = true;
     this.mainLight.shadow.mapSize.width = 2048;
@@ -108,61 +108,61 @@ class HydroponicScene {
     this.mainLight.shadow.bias = -0.0005;
     this.scene.add(this.mainLight);
 
-    // Horticultural Grow Light Fixture (Pink / Purple UV spectrum)
-    this.growLight = new THREE.SpotLight(0xf43f5e, 3.5, 16, Math.PI / 3, 0.4, 1.2);
+    // Horticultural Grow Light Fixture
+    this.growLight = new THREE.SpotLight(0xf43f5e, 2.5, 16, Math.PI / 3, 0.4, 1.2);
     this.growLight.position.set(0, 6.5, 0);
     this.growLight.target.position.set(0, 2.5, 0);
     this.scene.add(this.growLight);
     this.scene.add(this.growLight.target);
 
-    // Secondary Purple fill light for crops
-    this.uvLight = new THREE.PointLight(0xa855f7, 2.0, 10);
+    // Secondary soft fill
+    this.uvLight = new THREE.PointLight(0x38bdf8, 1.0, 10);
     this.uvLight.position.set(0, 5.5, 1);
     this.scene.add(this.uvLight);
 
-    // Water Glow Pointlight inside the reservoir
-    this.waterLight = new THREE.PointLight(0x00f5d4, 1.8, 6);
+    // Water Light inside reservoir (Soft Light Blue)
+    this.waterLight = new THREE.PointLight(0x0ea5e9, 1.2, 5);
     this.waterLight.position.set(-3.2, 1.2, 0);
     this.scene.add(this.waterLight);
 
     // Subtle Rim Light from back
-    this.rimLight = new THREE.DirectionalLight(0x00c4b4, 0.8);
+    this.rimLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
     this.rimLight.position.set(-10, 8, -10);
     this.scene.add(this.rimLight);
   }
 
   buildLaboratoryPlatform() {
-    // Floor Grid / Platform
+    // Floor Grid / Platform (Clean White with Light Blue Accent)
     const floorGeo = new THREE.CylinderGeometry(8.5, 9.0, 0.4, 48);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x0e1720,
-      roughness: 0.35,
-      metalness: 0.7,
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.1,
     });
     const platform = new THREE.Mesh(floorGeo, floorMat);
     platform.position.y = -0.2;
     platform.receiveShadow = true;
     this.scene.add(platform);
 
-    // Outer Glowing Hex Rim
-    const rimGeo = new THREE.TorusGeometry(8.5, 0.05, 16, 64);
-    const rimMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
+    // Outer Light Blue Trim
+    const rimGeo = new THREE.TorusGeometry(8.5, 0.04, 16, 64);
+    const rimMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
     const rim = new THREE.Mesh(rimGeo, rimMat);
     rim.rotation.x = Math.PI / 2;
     rim.position.y = 0.01;
     this.scene.add(rim);
 
-    // Subtle grid helper on platform
-    const grid = new THREE.GridHelper(16, 24, 0x00f5d4, 0x192834);
+    // Clean Light Blue & Gray Grid
+    const grid = new THREE.GridHelper(16, 24, 0x0ea5e9, 0xcbd5e1);
     grid.position.y = 0.02;
     this.scene.add(grid);
 
-    // Workstation Table Frame (Holds Hydroponic system)
+    // Workstation Table Frame (Clean White Top)
     const tableTopGeo = new THREE.BoxGeometry(11, 0.3, 5.5);
     const tableMat = new THREE.MeshStandardMaterial({
-      color: 0x16222e,
-      roughness: 0.4,
-      metalness: 0.6
+      color: 0xffffff,
+      roughness: 0.25,
+      metalness: 0.1
     });
     const tableTop = new THREE.Mesh(tableTopGeo, tableMat);
     tableTop.position.set(0, 1.5, 0);
@@ -170,9 +170,9 @@ class HydroponicScene {
     tableTop.receiveShadow = true;
     this.scene.add(tableTop);
 
-    // Table Legs
+    // Table Legs (Brushed Aluminum)
     const legGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 16);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x243444, metalness: 0.8, roughness: 0.3 });
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
     const legPositions = [
       [-5.2, 0.75, -2.5],
       [5.2, 0.75, -2.5],
@@ -236,7 +236,7 @@ class HydroponicScene {
 
     // Reservoir Rim and Base trim
     const trimGeo = new THREE.BoxGeometry(tankWidth + 0.1, 0.1, tankDepth + 0.1);
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.5, metalness: 0.3 });
     const bottomTrim = new THREE.Mesh(trimGeo, trimMat);
     bottomTrim.position.y = 0.05;
     const topTrim = new THREE.Mesh(trimGeo, trimMat);
@@ -244,12 +244,12 @@ class HydroponicScene {
     this.tankGroup.add(bottomTrim);
     this.tankGroup.add(topTrim);
 
-    // Glowing Water Liquid Volume inside
+    // Clean Translucent Light Blue Water Liquid inside
     const waterMargin = 0.08;
     const maxWaterHeight = tankHeight * 0.85;
     const waterGeo = new THREE.BoxGeometry(tankWidth - waterMargin * 2, maxWaterHeight, tankDepth - waterMargin * 2);
     this.waterMat = new THREE.MeshPhysicalMaterial({
-      color: 0x00f5d4,
+      color: 0x38bdf8,
       transparent: true,
       opacity: 0.65,
       roughness: 0.15,

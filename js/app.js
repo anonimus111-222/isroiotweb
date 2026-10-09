@@ -375,41 +375,34 @@ function drawPhGauge(value) {
   const startAngle = Math.PI * 0.85;
   const endAngle = Math.PI * 2.15;
 
-  // Background Track
+  // Background Track (Solid Light Gray, No Glow)
   ctx.clearRect(0, 0, width, height);
   ctx.beginPath();
   ctx.arc(cx, cy, radius, startAngle, endAngle);
   ctx.lineWidth = 10;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.strokeStyle = '#e2e8f0';
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Value Arc (0 - 14)
+  // Value Arc (Solid Biru Muda, No Gradient)
   const normVal = Math.min(Math.max(value / 14, 0), 1);
   const currentAngle = startAngle + normVal * (endAngle - startAngle);
-
-  const grad = ctx.createLinearGradient(0, 0, width, 0);
-  grad.addColorStop(0, '#38bdf8');
-  grad.addColorStop(0.5, '#00f5d4');
-  grad.addColorStop(1, '#f43f5e');
 
   ctx.beginPath();
   ctx.arc(cx, cy, radius, startAngle, currentAngle);
   ctx.lineWidth = 10;
-  ctx.strokeStyle = grad;
+  ctx.strokeStyle = '#0ea5e9';
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Needle tip
+  // Needle tip (Solid, No Glow)
   const tipX = cx + Math.cos(currentAngle) * radius;
   const tipY = cy + Math.sin(currentAngle) * radius;
   ctx.beginPath();
   ctx.arc(tipX, tipY, 6, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = '#00f5d4';
-  ctx.shadowBlur = 10;
-  ctx.fill();
+  ctx.fillStyle = '#0284c7';
   ctx.shadowBlur = 0;
+  ctx.fill();
 }
 
 function drawTdsGauge(value) {
@@ -429,41 +422,34 @@ function drawTdsGauge(value) {
   const startAngle = Math.PI * 0.85;
   const endAngle = Math.PI * 2.15;
 
-  // Background Track
+  // Background Track (Solid Light Gray, No Glow)
   ctx.clearRect(0, 0, width, height);
   ctx.beginPath();
   ctx.arc(cx, cy, radius, startAngle, endAngle);
   ctx.lineWidth = 10;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.strokeStyle = '#e2e8f0';
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Value Arc (0 - 2000 PPM)
+  // Value Arc (Solid Blue, No Gradient)
   const normVal = Math.min(Math.max(value / 2000, 0), 1);
   const currentAngle = startAngle + normVal * (endAngle - startAngle);
-
-  const grad = ctx.createLinearGradient(0, 0, width, 0);
-  grad.addColorStop(0, '#10b981');
-  grad.addColorStop(0.6, '#f59e0b');
-  grad.addColorStop(1, '#ef4444');
 
   ctx.beginPath();
   ctx.arc(cx, cy, radius, startAngle, currentAngle);
   ctx.lineWidth = 10;
-  ctx.strokeStyle = grad;
+  ctx.strokeStyle = '#0284c7';
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Needle tip
+  // Needle tip (Solid, No Glow)
   const tipX = cx + Math.cos(currentAngle) * radius;
   const tipY = cy + Math.sin(currentAngle) * radius;
   ctx.beginPath();
   ctx.arc(tipX, tipY, 6, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = '#f59e0b';
-  ctx.shadowBlur = 10;
-  ctx.fill();
+  ctx.fillStyle = '#0369a1';
   ctx.shadowBlur = 0;
+  ctx.fill();
 }
 
 function updatePhStatus(ph) {
@@ -471,13 +457,13 @@ function updatePhStatus(ph) {
   if (!phStatus) return;
   if (ph >= 5.5 && ph <= 6.5) {
     phStatus.textContent = 'Optimal (5.5 - 6.5)';
-    phStatus.style.color = 'var(--emerald)';
+    phStatus.className = 'gauge-status-badge normal';
   } else if (ph < 5.5) {
     phStatus.textContent = 'Terlalu Asam (pH Rendah)';
-    phStatus.style.color = 'var(--crimson)';
+    phStatus.className = 'gauge-status-badge danger';
   } else {
     phStatus.textContent = 'Terlalu Basa (pH Tinggi)';
-    phStatus.style.color = 'var(--amber)';
+    phStatus.className = 'gauge-status-badge warning';
   }
 }
 
@@ -486,18 +472,18 @@ function updateTdsStatus(tds) {
   if (!tdsStatus) return;
   if (tds >= 800 && tds <= 1200) {
     tdsStatus.textContent = 'Optimal (800-1200)';
-    tdsStatus.style.color = 'var(--emerald)';
+    tdsStatus.className = 'gauge-status-badge normal';
   } else if (tds < 800) {
     tdsStatus.textContent = 'Kurang Nutrisi (< 800)';
-    tdsStatus.style.color = 'var(--amber)';
+    tdsStatus.className = 'gauge-status-badge warning';
   } else {
     tdsStatus.textContent = 'Nutrisi Pekat (> 1200)';
-    tdsStatus.style.color = 'var(--crimson)';
+    tdsStatus.className = 'gauge-status-badge danger';
   }
 }
 
 /* -------------------------------------------------------------
-   4. CHART.JS REAL-TIME TELEMETRY GRAPH
+   4. CHART.JS REAL-TIME TELEMETRY GRAPH (FLAT LIGHT THEME)
    ------------------------------------------------------------- */
 function initChart() {
   const ctx = document.getElementById('sensorGraph');
@@ -520,27 +506,27 @@ function initChart() {
         {
           label: 'pH Air',
           data: appState.history.phData,
-          borderColor: '#00c4b4',
-          backgroundColor: 'rgba(0, 196, 180, 0.08)',
-          borderWidth: 2.5,
-          tension: 0.25,
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14, 165, 233, 0.08)',
+          borderWidth: 2,
+          tension: 0.2,
           pointRadius: 3,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#00c4b4',
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#0ea5e9',
           fill: true,
           yAxisID: 'yPh'
         },
         {
           label: 'TDS (PPM)',
           data: appState.history.tdsData,
-          borderColor: '#f39c12',
-          backgroundColor: 'rgba(243, 156, 18, 0.05)',
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.04)',
           borderWidth: 2,
-          borderDash: [4, 4],
-          tension: 0.25,
+          borderDash: [3, 3],
+          tension: 0.2,
           pointRadius: 2,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#f39c12',
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#0284c7',
           fill: true,
           yAxisID: 'yTds'
         }
@@ -558,22 +544,22 @@ function initChart() {
           display: true,
           position: 'top',
           labels: {
-            color: '#8b9da8',
-            font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            color: '#334155',
+            font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '600' }
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(16, 24, 32, 0.95)',
-          titleColor: '#ffffff',
-          bodyColor: '#e2e8f0',
-          borderColor: 'rgba(0, 245, 212, 0.3)',
+          backgroundColor: '#ffffff',
+          titleColor: '#0f172a',
+          bodyColor: '#334155',
+          borderColor: '#cbd5e1',
           borderWidth: 1,
-          padding: 10
+          padding: 8
         }
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255, 255, 255, 0.04)' },
+          grid: { color: '#f1f5f9' },
           ticks: { color: '#64748b', font: { size: 10 } }
         },
         yPh: {
@@ -581,8 +567,8 @@ function initChart() {
           position: 'left',
           min: 4,
           max: 9,
-          grid: { color: 'rgba(255, 255, 255, 0.04)' },
-          ticks: { color: '#00c4b4', font: { size: 10 } }
+          grid: { color: '#f1f5f9' },
+          ticks: { color: '#0ea5e9', font: { size: 10, weight: '600' } }
         },
         yTds: {
           type: 'linear',
@@ -590,7 +576,7 @@ function initChart() {
           min: 400,
           max: 2000,
           grid: { display: false },
-          ticks: { color: '#f39c12', font: { size: 10 } }
+          ticks: { color: '#0284c7', font: { size: 10, weight: '600' } }
         }
       }
     }
