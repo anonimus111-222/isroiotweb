@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKADUTA — 3D Smart Agriculture & Hydroponics IoT Hub</title>
+  
+  <!-- Modern Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Core Libraries: Chart.js, Three.js 3D Engine, & Firebase SDK -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- ==========================================
+         SIDEBAR NAVIGATION & STATUS
+         ========================================== -->
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="logo-badge">
+          <div class="logo-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 0 1 10 10c0 5.5-4.5 10-10 10S2 17.5 2 12A10 10 0 0 1 12 2z"></path>
+              <path d="M12 6v6l4 2"></path>
+              <path d="M7 16c2-1 4-1 6 0"></path>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <h1>SKADUTA</h1>
+            <p>Smart Agriculture 3D</p>
+          </div>
+        </div>
+
+        <nav class="nav-group">
+          <div class="nav-label">Navigasi Utama</div>
+          <a class="nav-item active" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>3D Digital Twin</span>
+          </a>
+          <a class="nav-item" href="#relay-section">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+            <span>Relay & Pompa</span>
+          </a>
+          <a class="nav-item" href="#telemetry-section">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span>Telemetri & Grafik</span>
+          </a>
+        </nav>
+
+        <!-- Sidebar Quick System Status -->
+        <div class="quick-stats-box">
+          <div class="quick-stats-title">
+            <span>Status Sistem</span>
+            <span class="quick-pill-status">Online</span>
+          </div>
+          <div class="stat-mini-row">
+            <span class="stat-mini-label">Suhu Air</span>
+            <span class="stat-mini-val" id="metric-temp-water">24.5°C</span>
+          </div>
+          <div class="stat-mini-row">
+            <span class="stat-mini-label">Suhu Udara</span>
+            <span class="stat-mini-val" id="metric-temp-air">28.2°C</span>
+          </div>
+          <div class="stat-mini-row">
+            <span class="stat-mini-label">Kelembaban</span>
+            <span class="stat-mini-val" id="metric-humidity">72%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="header-btn" id="btn-sound-toggle" style="width: 100%; justify-content: center;">
+          🔊 Audio ON
+        </button>
+        <div class="system-tag">
+          v1.0.0 Skaduta Hydroponic System<br>
+          SMK N 2 Yogyakarta
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================
+         MAIN CONTENT AREA
+         ========================================== -->
+    <main class="main-content">
+      
+      <!-- HEADER BAR -->
+      <header class="header-bar">
+        <div class="header-left">
+          <div class="page-title">
+            <span>SKADUTA — Smart Hidroponik Panel</span>
+            <span class="sub-badge">3D Digital Twin</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="connection-badge" id="db-status" title="Klik untuk konfigurasi Firebase">
+            <span class="status-indicator-dot"></span>
+            <span>Menghubungkan...</span>
+          </div>
+          <button class="header-btn" id="btn-autopilot">
+            🤖 Auto-Pilot: NONAKTIF
+          </button>
+          <button class="header-btn primary" id="btn-emergency-stop" style="border-color: var(--crimson); color: var(--crimson);">
+            ⛔ E-Stop
+          </button>
+        </div>
+      </header>
+
+      <!-- SAKELAR RELAY CONTROLS (4 CARDS) -->
+      <section class="relay-section" id="relay-section">
+        <div class="relay-section-title">
+          <span>Kontrol Relay & Dosing Pump (Peristaltik)</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: none;">Sinkronisasi Real-time 3D Twin</span>
+        </div>
+        <div class="relay-grid" style="margin-top: 10px;">
+          
+          <!-- Relay 1: Pompa pH Up -->
+          <div class="relay-card pump-ph-up" id="card-relay1">
+            <div class="relay-card-header">
+              <div class="relay-info-wrap">
+                <div class="relay-icon-box">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="relay-title">Pompa pH Up</div>
+                  <div class="relay-tag">RELAY CH-01</div>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="relay1" onchange="toggleRelay('relay1', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="relay-card-footer">
+              <div>Status: <span class="relay-status-text" id="status-relay1">MATI</span></div>
+              <button class="relay-action-btn" onclick="pulseRelay('relay1', 3)">Dosis 10ml</button>
+            </div>
+          </div>
+
+          <!-- Relay 2: Pompa pH Down -->
+          <div class="relay-card pump-ph-down" id="card-relay2">
+            <div class="relay-card-header">
+              <div class="relay-info-wrap">
+                <div class="relay-icon-box">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="relay-title">Pompa pH Down</div>
+                  <div class="relay-tag">RELAY CH-02</div>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="relay2" onchange="toggleRelay('relay2', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="relay-card-footer">
+              <div>Status: <span class="relay-status-text" id="status-relay2">MATI</span></div>
+              <button class="relay-action-btn" onclick="pulseRelay('relay2', 3)">Dosis 10ml</button>
+            </div>
+          </div>
+
+          <!-- Relay 3: Pompa Nutrisi A -->
+          <div class="relay-card pump-nutrisi-a" id="card-relay3">
+            <div class="relay-card-header">
+              <div class="relay-info-wrap">
+                <div class="relay-icon-box">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="relay-title">Pompa Nutrisi A</div>
+                  <div class="relay-tag">RELAY CH-03 (Pekatan A)</div>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="relay3" onchange="toggleRelay('relay3', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="relay-card-footer">
+              <div>Status: <span class="relay-status-text" id="status-relay3">MATI</span></div>
+              <button class="relay-action-btn" onclick="pulseRelay('relay3', 3)">Dosis 10ml</button>
+            </div>
+          </div>
+
+          <!-- Relay 4: Pompa Nutrisi B -->
+          <div class="relay-card pump-nutrisi-b" id="card-relay4">
+            <div class="relay-card-header">
+              <div class="relay-info-wrap">
+                <div class="relay-icon-box">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div class="relay-title">Pompa Nutrisi B</div>
+                  <div class="relay-tag">RELAY CH-04 (Pekatan B)</div>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="relay4" onchange="toggleRelay('relay4', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="relay-card-footer">
+              <div>Status: <span class="relay-status-text" id="status-relay4">MATI</span></div>
+              <button class="relay-action-btn" onclick="pulseRelay('relay4', 3)">Dosis 10ml</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ==========================================
+           MIDDLE WORKSPACE: 3D VIEWPORT & GAUGES
+           ========================================== -->
+      <section class="workspace-grid" id="telemetry-section">
+        
+        <!-- 3D DIGITAL TWIN VIEWPORT -->
+        <div class="viewport-card">
+          
+          <!-- Top Viewport HUD -->
+          <div class="viewport-header">
+            <div class="viewport-badge">
+              <span class="badge-dot"></span>
+              <span>Visualisasi 3D Interaktif (Three.js WebGL)</span>
+            </div>
+            <div class="viewport-tools">
+              <button class="tool-chip-btn" id="btn-light-mode">
+                💡 Spektrum: GROW LIGHT
+              </button>
+              <button class="tool-chip-btn" id="btn-auto-rotate">
+                🔄 Orbit 360°
+              </button>
+            </div>
+          </div>
+
+          <!-- WebGL 3D Canvas Container -->
+          <div id="three-canvas-container"></div>
+
+          <!-- Bottom Viewport HUD (Camera Presets) -->
+          <div class="viewport-bottom-hud">
+            <div class="camera-preset-group">
+              <button class="camera-btn active" data-preset="overview">🪐 Pandangan Penuh</button>
+              <button class="camera-btn" data-preset="plants">🌱 Tanaman NFT</button>
+              <button class="camera-btn" data-preset="sensors">🧪 Sensor & Tangki</button>
+              <button class="camera-btn" data-preset="pumps">⚙️ Unit Pompa</button>
+            </div>
+            <div class="viewport-info-tag">
+              Gunakan Klik Kiri: Rotasi | Klik Kanan: Geser | Scroll: Zoom
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT TELEMETRY COLUMN: GAUGES & HEALTH -->
+        <div class="telemetry-column">
+          
+          <!-- Radial Gauges Panel -->
+          <div class="gauge-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <span>Indikator Presisi Sensor</span>
+              </div>
+            </div>
+
+            <div class="gauges-split-wrapper">
+              
+              <!-- pH Gauge -->
+              <div class="gauge-box">
+                <div class="gauge-label">Kadar pH Air</div>
+                <div class="canvas-gauge-holder">
+                  <canvas id="phGauge"></canvas>
+                  <div class="gauge-inner-val">
+                    <div class="gauge-num ph" id="phText">6.2</div>
+                    <div class="gauge-unit">pH Scale (0-14)</div>
+                  </div>
+                </div>
+                <div class="gauge-status-badge normal" id="ph-status">Optimal (5.5 - 6.5)</div>
+              </div>
+
+              <!-- TDS Gauge -->
+              <div class="gauge-box">
+                <div class="gauge-label">TDS (Kepekatan Nutrisi)</div>
+                <div class="canvas-gauge-holder">
+                  <canvas id="tdsGauge"></canvas>
+                  <div class="gauge-inner-val">
+                    <div class="gauge-num tds" id="tdsText">1050 PPM</div>
+                    <div class="gauge-unit">Total Dissolved Solids</div>
+                  </div>
+                </div>
+                <div class="gauge-status-badge normal" id="tds-status">Optimal (800-1200)</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- System Reservoir & Status Metrics -->
+          <div class="status-summary-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                <span>Status Reservoir & Air</span>
+              </div>
+              <span style="font-size: 0.72rem; color: var(--text-dim);" id="last-update">-</span>
+            </div>
+
+            <!-- Reservoir Water Level Bar -->
+            <div class="water-progress-wrap">
+              <div class="progress-header">
+                <span>Volume Air Reservoir</span>
+                <span id="water-level-val" style="font-family: var(--font-mono); font-weight: 700; color: var(--teal-primary);">78%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="water-level-fill"></div>
+              </div>
+            </div>
+
+            <div class="metrics-list">
+              <div class="metric-item">
+                <div class="metric-key">
+                  <span style="color: var(--teal-primary);">●</span> Sirkulasi Pompa Aerasi
+                </div>
+                <div class="metric-value" style="color: var(--emerald);">Normal (Aktif)</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-key">
+                  <span style="color: var(--amber);">●</span> Laju Alir Nutrisi
+                </div>
+                <div class="metric-value">1.8 Liter/Menit</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-key">
+                  <span style="color: var(--violet);">●</span> Mode Spektrum Cahaya
+                </div>
+                <div class="metric-value" style="color: var(--violet);">Hortikultura UV/Full</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ==========================================
+           BOTTOM SECTION: CHART & ACTIVITY TERMINAL
+           ========================================== -->
+      <section class="bottom-grid">
+        
+        <!-- Riwayat Sensor Chart.js -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"/>
+                <path d="m19 9-5 5-4-4-3 3"/>
+              </svg>
+              <span>Grafik Riwayat pH & TDS Realtime</span>
+            </div>
+            <div class="chart-controls">
+              <button class="timeframe-btn active">Live</button>
+              <button class="timeframe-btn">15m</button>
+              <button class="timeframe-btn">1 Jam</button>
+            </div>
+          </div>
+          <div class="chart-container-inner">
+            <canvas id="sensorGraph"></canvas>
+          </div>
+        </div>
+
+        <!-- Live Activity Terminal Log -->
+        <div class="automation-card">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"/>
+                <line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+              <span>Log Aktivitas & Dosing Terminal</span>
+            </div>
+          </div>
+          <div class="log-terminal" id="log-terminal">
+            <!-- Dynamic entries added via app.js -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==========================================
+       FIREBASE CONFIGURATION MODAL DIALOG
+       ========================================== -->
+  <div class="modal-overlay" id="firebase-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Konfigurasi Firebase Realtime DB</span>
+        </div>
+        <button class="modal-close-btn" id="modal-close">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fb-db-url">Firebase Database URL</label>
+        <input class="form-input" id="fb-db-url" type="text" placeholder="https://isro-project-default-rtdb.firebaseio.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fb-node-path">Node Path</label>
+        <input class="form-input" id="fb-node-path" type="text" value="skaduta_hydro" placeholder="skaduta_hydro">
+      </div>
+
+      <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
+        💡 Kosongkan jika ingin menjalankan mode <strong>Simulasi IoT Realistis (Offline Demo)</strong>. Data relay dan sensor akan disimulasikan secara presisi.
+      </p>
+
+      <div class="modal-actions">
+        <button class="header-btn" onclick="document.getElementById('firebase-modal').classList.remove('open')">Batal</button>
+        <button class="header-btn primary" id="btn-save-firebase">Simpan & Hubungkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/scene3d.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
